@@ -11,8 +11,8 @@ import sys
 from datetime import datetime
 from typing import Dict, List, Any
 
-# Backend URL from frontend environment
-BACKEND_URL = "https://syntra-brain.preview.emergentagent.com/api"
+# Backend URL - test locally since external URL has Cloudflare issues
+BACKEND_URL = "http://localhost:8001/api"
 
 class SyntraBackendTester:
     def __init__(self):
