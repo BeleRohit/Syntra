@@ -42,7 +42,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Constants
-EMBEDDING_MODEL = "text-embedding-3-small"
 SIMILARITY_THRESHOLD = 0.75
 
 # ================================
