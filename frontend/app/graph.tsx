@@ -249,7 +249,7 @@ export default function GraphScreen() {
               {nodePositions.length} node{nodePositions.length !== 1 ? 's' : ''} • {graphData?.connections.length || 0} connection{(graphData?.connections.length || 0) !== 1 ? 's' : ''}
             </Text>
           </View>
-        </View>
+        </ScrollView>
       )}
 
       {/* Selected node panel */}
