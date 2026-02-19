@@ -280,12 +280,15 @@ metadata:
 test_plan:
   current_focus:
     - "Create knowledge node with embedding"
+    - "Semantic search" 
+  stuck_tasks:
+    - "Create knowledge node with embedding"
     - "Semantic search"
-    - "Get graph data"
-  stuck_tasks: []
   test_all: true
   test_priority: "high_first"
 
 agent_communication:
   - agent: "main"
     message: "Initial implementation complete. Backend uses OpenAI text-embedding-3-small via Emergent LLM key for embeddings. Please test all backend endpoints - create node, semantic search, get graph, delete node. Key test: create 2-3 similar nodes and verify connections are auto-created with similarity > 0.75."
+  - agent: "testing"
+    message: "CRITICAL ISSUE FOUND: Emergent LLM API (api.emergentagi.com) connection failing. Health, nodes GET, and graph endpoints work correctly, but node creation and semantic search fail due to embedding generation errors. Backend logs show consistent 'Connection error' when calling Emergent API. This blocks core functionality - need to resolve API connectivity or implement fallback."
