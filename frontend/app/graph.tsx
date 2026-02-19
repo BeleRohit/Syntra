@@ -246,11 +246,25 @@ export default function GraphScreen() {
                   fill={TYPE_COLORS[node.type] || COLORS.accent}
                   stroke={selectedNode?.id === node.id ? COLORS.textLight : 'none'}
                   strokeWidth={selectedNode?.id === node.id ? 3 : 0}
-                  onPress={() => handleNodePress(node)}
                 />
               </G>
             ))}
           </Svg>
+          
+          {/* Touchable overlays for node selection */}
+          {simNodes.map((node) => (
+            <TouchableOpacity
+              key={`touch-${node.id}`}
+              style={[
+                styles.nodeTouch,
+                {
+                  left: (node.x || 0) - 20,
+                  top: (node.y || 0) - 20,
+                },
+              ]}
+              onPress={() => handleNodePress(node)}
+            />
+          ))}
 
           {/* Node count info */}
           <View style={styles.statsBar}>
