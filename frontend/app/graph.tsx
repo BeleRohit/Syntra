@@ -406,6 +406,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 16,
     overflow: 'hidden',
+    position: 'relative',
+  },
+  nodeTouch: {
+    position: 'absolute',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
   statsBar: {
     position: 'absolute',
