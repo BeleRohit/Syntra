@@ -377,6 +377,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: COLORS.textLight,
   },
+  graphScrollView: {
+    flex: 1,
+    marginHorizontal: 24,
+  },
+  graphScrollContent: {
+    alignItems: 'center',
+  },
   graphContainer: {
     flex: 1,
     marginHorizontal: 24,
