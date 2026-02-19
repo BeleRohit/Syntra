@@ -188,7 +188,7 @@ export default function GraphScreen() {
         </View>
       ) : (
         <View style={styles.graphContainer}>
-          <View style={[styles.graphArea, { width: GRAPH_SIZE, height: GRAPH_SIZE }]}>
+          <View style={[styles.graphArea, { width: GRAPH_WIDTH, height: GRAPH_HEIGHT }]}>
             {/* Connection lines - rendered as simple line views */}
             {connectionLines.map((line: any) => {
               if (!line) return null;
