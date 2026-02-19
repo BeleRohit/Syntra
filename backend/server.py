@@ -9,8 +9,8 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 import uuid
 from datetime import datetime
-from openai import OpenAI
 import numpy as np
+from sentence_transformers import SentenceTransformer
 
 
 ROOT_DIR = Path(__file__).parent
@@ -21,12 +21,12 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-# OpenAI client for embeddings
-EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY', '')
-openai_client = OpenAI(
-    api_key=EMERGENT_LLM_KEY,
-    base_url="https://api.emergentagi.com/v1"
-)
+# Initialize local embedding model (no API key needed!)
+# Using all-MiniLM-L6-v2 - fast, efficient, 384 dimensions
+logger_temp = logging.getLogger(__name__)
+logger_temp.info("Loading embedding model...")
+embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+logger_temp.info("Embedding model loaded successfully")
 
 # Create the main app without a prefix
 app = FastAPI(title="Syntra API", description="Personal Knowledge Operating System")
