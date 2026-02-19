@@ -190,7 +190,10 @@ export default function GraphScreen() {
           </TouchableOpacity>
         </View>
       ) : (
-        <View style={styles.graphContainer}>
+        <ScrollView 
+          style={styles.graphScrollView}
+          contentContainerStyle={styles.graphScrollContent}
+        >
           <View style={[styles.graphArea, { width: GRAPH_WIDTH, height: GRAPH_HEIGHT }]}>
             {/* Connection lines - rendered as simple line views */}
             {connectionLines.map((line: any) => {
