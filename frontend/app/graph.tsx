@@ -14,9 +14,8 @@ import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
-const { width, height } = Dimensions.get('window');
-const GRAPH_WIDTH = width - 48;
-const GRAPH_HEIGHT = height * 0.55;
+const GRAPH_WIDTH = 342; // Fixed width for mobile screens
+const GRAPH_HEIGHT = 450; // Fixed reasonable height
 
 const COLORS = {
   background: '#0a1628',
