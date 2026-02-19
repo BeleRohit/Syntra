@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -7,23 +7,15 @@ import {
   SafeAreaView,
   ActivityIndicator,
   Dimensions,
+  ScrollView,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import Svg, { Circle, Line, G } from 'react-native-svg';
 import axios from 'axios';
-import {
-  forceSimulation,
-  forceLink,
-  forceManyBody,
-  forceCenter,
-  forceCollide,
-} from 'd3-force';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
-const { width, height } = Dimensions.get('window');
-const GRAPH_WIDTH = width - 48;
-const GRAPH_HEIGHT = height - 250;
+const { width } = Dimensions.get('window');
+const GRAPH_SIZE = width - 48;
 
 const COLORS = {
   background: '#0a1628',
@@ -60,26 +52,19 @@ interface GraphData {
   connections: Connection[];
 }
 
-interface SimNode {
+interface NodePosition {
   id: string;
   type: string;
   title: string;
-  x?: number;
-  y?: number;
-}
-
-interface SimLink {
-  source: string | SimNode;
-  target: string | SimNode;
-  weight: number;
+  x: number;
+  y: number;
 }
 
 export default function GraphScreen() {
   const [graphData, setGraphData] = useState<GraphData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [simNodes, setSimNodes] = useState<SimNode[]>([]);
-  const [simLinks, setSimLinks] = useState<SimLink[]>([]);
-  const [selectedNode, setSelectedNode] = useState<SimNode | null>(null);
+  const [nodePositions, setNodePositions] = useState<NodePosition[]>([]);
+  const [selectedNode, setSelectedNode] = useState<NodePosition | null>(null);
 
   useEffect(() => {
     fetchGraphData();
@@ -90,7 +75,7 @@ export default function GraphScreen() {
     try {
       const response = await axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/graph`);
       setGraphData(response.data);
-      processGraphData(response.data);
+      calculatePositions(response.data);
     } catch (error) {
       console.error('Error fetching graph:', error);
     } finally {
@@ -98,39 +83,29 @@ export default function GraphScreen() {
     }
   };
 
-  const processGraphData = (data: GraphData) => {
+  const calculatePositions = (data: GraphData) => {
     if (!data.nodes.length) {
-      setSimNodes([]);
-      setSimLinks([]);
+      setNodePositions([]);
       return;
     }
 
-    // Simple grid layout for nodes (avoid d3-force complexity)
-    const cols = Math.ceil(Math.sqrt(data.nodes.length));
-    const cellWidth = GRAPH_WIDTH / (cols + 1);
-    const cellHeight = GRAPH_HEIGHT / (cols + 1);
+    // Calculate grid positions
+    const numNodes = data.nodes.length;
+    const cols = Math.ceil(Math.sqrt(numNodes));
+    const cellSize = GRAPH_SIZE / (cols + 1);
     
-    const nodes: SimNode[] = data.nodes.map((node, index) => ({
+    const positions: NodePosition[] = data.nodes.map((node, index) => ({
       id: node.id,
       type: node.type,
       title: node.title,
-      x: (index % cols + 1) * cellWidth,
-      y: Math.floor(index / cols + 1) * cellHeight,
+      x: ((index % cols) + 0.5) * cellSize,
+      y: (Math.floor(index / cols) + 0.5) * cellSize,
     }));
 
-    // Prepare links for simulation  
-    const links: SimLink[] = data.connections.map((conn) => ({
-      source: conn.fromNodeId,
-      target: conn.toNodeId,
-      weight: conn.similarityScore,
-    }));
-
-    // No d3-force simulation needed - using simple grid layout
-    setSimNodes(nodes);
-    setSimLinks(links);
+    setNodePositions(positions);
   };
 
-  const handleNodePress = (node: SimNode) => {
+  const handleNodePress = (node: NodePosition) => {
     setSelectedNode(node);
   };
 
@@ -140,23 +115,30 @@ export default function GraphScreen() {
     }
   };
 
-  // Get link positions
-  const linkPositions = useMemo(() => {
-    const nodeMap = new Map(simNodes.map((n) => [n.id, n]));
-    return simLinks.map((link) => {
-      const sourceId = typeof link.source === 'string' ? link.source : link.source.id;
-      const targetId = typeof link.target === 'string' ? link.target : link.target.id;
-      const source = nodeMap.get(sourceId);
-      const target = nodeMap.get(targetId);
+  // Get connection lines
+  const getConnectionLines = () => {
+    if (!graphData || !nodePositions.length) return [];
+    
+    const nodeMap = new Map(nodePositions.map(n => [n.id, n]));
+    
+    return graphData.connections.map((conn, index) => {
+      const fromNode = nodeMap.get(conn.fromNodeId);
+      const toNode = nodeMap.get(conn.toNodeId);
+      
+      if (!fromNode || !toNode) return null;
+      
       return {
-        x1: source?.x || 0,
-        y1: source?.y || 0,
-        x2: target?.x || 0,
-        y2: target?.y || 0,
-        weight: link.weight,
+        key: `line-${index}`,
+        x1: fromNode.x + 20,
+        y1: fromNode.y + 20,
+        x2: toNode.x + 20,
+        y2: toNode.y + 20,
+        weight: conn.similarityScore,
       };
-    });
-  }, [simNodes, simLinks]);
+    }).filter(Boolean);
+  };
+
+  const connectionLines = getConnectionLines();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -187,7 +169,7 @@ export default function GraphScreen() {
           <ActivityIndicator size="large" color={COLORS.accent} />
           <Text style={styles.loadingText}>Loading graph...</Text>
         </View>
-      ) : simNodes.length === 0 ? (
+      ) : nodePositions.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Ionicons name="git-network-outline" size={80} color={COLORS.textMuted} />
           <Text style={styles.emptyText}>No nodes yet</Text>
@@ -202,55 +184,59 @@ export default function GraphScreen() {
         </View>
       ) : (
         <View style={styles.graphContainer}>
-          <Svg width={GRAPH_WIDTH} height={GRAPH_HEIGHT}>
-            {/* Draw edges */}
-            {linkPositions.map((link, index) => (
-              <Line
-                key={`link-${index}`}
-                x1={link.x1}
-                y1={link.y1}
-                x2={link.x2}
-                y2={link.y2}
-                stroke={COLORS.accent}
-                strokeWidth={Math.max(1, link.weight * 3)}
-                strokeOpacity={0.4}
-              />
-            ))}
-
-            {/* Draw nodes */}
-            {simNodes.map((node) => (
-              <G key={node.id}>
-                <Circle
-                  cx={node.x}
-                  cy={node.y}
-                  r={selectedNode?.id === node.id ? 22 : 18}
-                  fill={TYPE_COLORS[node.type] || COLORS.accent}
-                  stroke={selectedNode?.id === node.id ? COLORS.textLight : 'none'}
-                  strokeWidth={selectedNode?.id === node.id ? 3 : 0}
+          <View style={[styles.graphArea, { width: GRAPH_SIZE, height: GRAPH_SIZE }]}>
+            {/* Connection lines - rendered as simple line views */}
+            {connectionLines.map((line: any) => {
+              if (!line) return null;
+              const dx = line.x2 - line.x1;
+              const dy = line.y2 - line.y1;
+              const length = Math.sqrt(dx * dx + dy * dy);
+              const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+              
+              return (
+                <View
+                  key={line.key}
+                  style={[
+                    styles.connectionLine,
+                    {
+                      width: length,
+                      left: line.x1,
+                      top: line.y1,
+                      transform: [{ rotate: `${angle}deg` }],
+                      opacity: 0.3 + line.weight * 0.4,
+                    },
+                  ]}
                 />
-              </G>
+              );
+            })}
+            
+            {/* Nodes */}
+            {nodePositions.map((node) => (
+              <TouchableOpacity
+                key={node.id}
+                style={[
+                  styles.graphNode,
+                  {
+                    left: node.x,
+                    top: node.y,
+                    backgroundColor: TYPE_COLORS[node.type] || COLORS.accent,
+                    borderColor: selectedNode?.id === node.id ? COLORS.textLight : 'transparent',
+                    borderWidth: selectedNode?.id === node.id ? 3 : 0,
+                  },
+                ]}
+                onPress={() => handleNodePress(node)}
+              >
+                <Text style={styles.nodeInitial}>
+                  {node.type.charAt(0).toUpperCase()}
+                </Text>
+              </TouchableOpacity>
             ))}
-          </Svg>
-          
-          {/* Touchable overlays for node selection */}
-          {simNodes.map((node) => (
-            <TouchableOpacity
-              key={`touch-${node.id}`}
-              style={[
-                styles.nodeTouch,
-                {
-                  left: (node.x || 0) - 20,
-                  top: (node.y || 0) - 20,
-                },
-              ]}
-              onPress={() => handleNodePress(node)}
-            />
-          ))}
+          </View>
 
           {/* Node count info */}
           <View style={styles.statsBar}>
             <Text style={styles.statsText}>
-              {simNodes.length} node{simNodes.length !== 1 ? 's' : ''} • {simLinks.length} connection{simLinks.length !== 1 ? 's' : ''}
+              {nodePositions.length} node{nodePositions.length !== 1 ? 's' : ''} • {graphData?.connections.length || 0} connection{(graphData?.connections.length || 0) !== 1 ? 's' : ''}
             </Text>
           </View>
         </View>
@@ -384,22 +370,34 @@ const styles = StyleSheet.create({
   graphContainer: {
     flex: 1,
     marginHorizontal: 24,
+    alignItems: 'center',
+  },
+  graphArea: {
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 16,
-    overflow: 'hidden',
     position: 'relative',
   },
-  nodeTouch: {
+  connectionLine: {
+    position: 'absolute',
+    height: 2,
+    backgroundColor: COLORS.accent,
+    transformOrigin: 'left center',
+  },
+  graphNode: {
     position: 'absolute',
     width: 40,
     height: 40,
     borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  nodeInitial: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.textLight,
   },
   statsBar: {
-    position: 'absolute',
-    bottom: 12,
-    left: 0,
-    right: 0,
+    marginTop: 12,
     alignItems: 'center',
   },
   statsText: {
