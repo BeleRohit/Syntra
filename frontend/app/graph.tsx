@@ -94,8 +94,8 @@ export default function GraphScreen() {
     const numNodes = data.nodes.length;
     const cols = Math.ceil(Math.sqrt(numNodes));
     const rows = Math.ceil(numNodes / cols);
-    const cellWidth = GRAPH_SIZE / (cols + 1);
-    const cellHeight = GRAPH_SIZE / (rows + 1);
+    const cellWidth = GRAPH_WIDTH / (cols + 1);
+    const cellHeight = GRAPH_HEIGHT / (rows + 1);
     const nodeSize = 40; // Size of each node
     
     const positions: NodePosition[] = data.nodes.map((node, index) => ({
