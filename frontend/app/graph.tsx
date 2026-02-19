@@ -118,37 +118,14 @@ export default function GraphScreen() {
       y: Math.floor(index / cols + 1) * cellHeight,
     }));
 
-    // Prepare links for simulation
+    // Prepare links for simulation  
     const links: SimLink[] = data.connections.map((conn) => ({
       source: conn.fromNodeId,
       target: conn.toNodeId,
       weight: conn.similarityScore,
     }));
 
-    // Run force simulation
-    const simulation = forceSimulation<SimNode>(nodes)
-      .force(
-        'link',
-        forceLink<SimNode, SimLink>(links)
-          .id((d) => d.id)
-          .distance(100)
-      )
-      .force('charge', forceManyBody().strength(-300))
-      .force('center', forceCenter(GRAPH_WIDTH / 2, GRAPH_HEIGHT / 2))
-      .force('collision', forceCollide(30))
-      .stop();
-
-    // Run simulation ticks
-    for (let i = 0; i < 300; i++) {
-      simulation.tick();
-    }
-
-    // Clamp positions to bounds
-    nodes.forEach((node) => {
-      node.x = Math.max(30, Math.min(GRAPH_WIDTH - 30, node.x || GRAPH_WIDTH / 2));
-      node.y = Math.max(30, Math.min(GRAPH_HEIGHT - 30, node.y || GRAPH_HEIGHT / 2));
-    });
-
+    // No d3-force simulation needed - using simple grid layout
     setSimNodes(nodes);
     setSimLinks(links);
   };
