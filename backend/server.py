@@ -96,17 +96,15 @@ class NodeWithConnections(BaseModel):
 # ================================
 
 def generate_embedding(content: str) -> List[float]:
-    """Generate embedding for text content using OpenAI."""
+    """Generate embedding for text content using local sentence-transformers model."""
     try:
         text_clean = content.replace("\n", " ").strip()
         if not text_clean:
             return []
         
-        response = openai_client.embeddings.create(
-            input=text_clean,
-            model=EMBEDDING_MODEL
-        )
-        return response.data[0].embedding
+        # Use local sentence-transformers model (no API key needed!)
+        embedding = embedding_model.encode(text_clean, convert_to_numpy=True)
+        return embedding.tolist()
     except Exception as e:
         logger.error(f"Error generating embedding: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to generate embedding: {str(e)}")
