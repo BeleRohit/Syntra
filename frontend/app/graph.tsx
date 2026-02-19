@@ -105,13 +105,17 @@ export default function GraphScreen() {
       return;
     }
 
-    // Prepare nodes for simulation
-    const nodes: SimNode[] = data.nodes.map((node) => ({
+    // Simple grid layout for nodes (avoid d3-force complexity)
+    const cols = Math.ceil(Math.sqrt(data.nodes.length));
+    const cellWidth = GRAPH_WIDTH / (cols + 1);
+    const cellHeight = GRAPH_HEIGHT / (cols + 1);
+    
+    const nodes: SimNode[] = data.nodes.map((node, index) => ({
       id: node.id,
       type: node.type,
       title: node.title,
-      x: GRAPH_WIDTH / 2 + (Math.random() - 0.5) * 100,
-      y: GRAPH_HEIGHT / 2 + (Math.random() - 0.5) * 100,
+      x: (index % cols + 1) * cellWidth,
+      y: Math.floor(index / cols + 1) * cellHeight,
     }));
 
     // Prepare links for simulation
