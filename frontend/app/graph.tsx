@@ -89,17 +89,20 @@ export default function GraphScreen() {
       return;
     }
 
-    // Calculate grid positions
+    // Calculate grid positions with proper centering
     const numNodes = data.nodes.length;
     const cols = Math.ceil(Math.sqrt(numNodes));
-    const cellSize = GRAPH_SIZE / (cols + 1);
+    const rows = Math.ceil(numNodes / cols);
+    const cellWidth = GRAPH_SIZE / (cols + 1);
+    const cellHeight = GRAPH_SIZE / (rows + 1);
+    const nodeSize = 40; // Size of each node
     
     const positions: NodePosition[] = data.nodes.map((node, index) => ({
       id: node.id,
       type: node.type,
       title: node.title,
-      x: ((index % cols) + 0.5) * cellSize,
-      y: (Math.floor(index / cols) + 0.5) * cellSize,
+      x: ((index % cols) + 1) * cellWidth - nodeSize / 2,
+      y: (Math.floor(index / cols) + 1) * cellHeight - nodeSize / 2,
     }));
 
     setNodePositions(positions);
